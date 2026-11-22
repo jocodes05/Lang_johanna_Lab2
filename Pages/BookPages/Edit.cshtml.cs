@@ -22,89 +22,64 @@ namespace Lang_johanna_Lab2.Pages.BookPages
         public async Task<IActionResult> OnGetAsync(int? id)
         {
             if (id == null)
-            {
                 return NotFound();
-            }
 
-            // Include Author according to Lab 2 requirements
             Book = await _context.Book
-                .Include(b => b.Author)
-                .Include(b => b.Publisher)
                 .Include(b => b.BookCategories)
-                    .ThenInclude(b => b.Category)
-                .AsNoTracking()
-                .FirstOrDefaultAsync(m => m.ID == id);
+                    .ThenInclude(bc => bc.Category)
+                .FirstOrDefaultAsync(b => b.ID == id);
 
             if (Book == null)
-            {
                 return NotFound();
-            }
 
-            // PopulateAssignedCategoryData to obtain information
-            // needed for the category checkboxes
+            LoadDropdowns();
             PopulateAssignedCategoryData(_context, Book);
-
-            var authorList = _context.Author.Select(x => new
-            {
-                x.ID,
-                FullName = x.LastName + " " + x.FirstName
-            });
-
-            ViewData["AuthorID"] = new SelectList(
-                authorList, "ID", "FullName");
-
-            ViewData["PublisherID"] = new SelectList(
-                _context.Publisher, "ID", "PublisherName");
 
             return Page();
         }
 
-        public async Task<IActionResult> OnPostAsync(
-            int? id, string[] selectedCategories)
+        private void LoadDropdowns()
         {
-            if (id == null)
+            var authors = _context.Author.Select(a => new
             {
-                return NotFound();
-            }
+                a.ID,
+                FullName = a.LastName + " " + a.FirstName
+            }).ToList();
 
-            // Include Author according to Lab 2 requirements
+            ViewData["AuthorID"] = new SelectList(
+                authors, "ID", "FullName", Book.AuthorID);
+
+            ViewData["PublisherID"] = new SelectList(
+                _context.Publisher.ToList(),
+                "ID", "PublisherName", Book.PublisherID);
+        }
+
+        public async Task<IActionResult> OnPostAsync(
+            string[] selectedCategories)
+        {
+            if (Book == null)
+                return NotFound();
+
             var bookToUpdate = await _context.Book
-                .Include(i => i.Author)
-                .Include(i => i.Publisher)
-                .Include(i => i.BookCategories)
-                    .ThenInclude(i => i.Category)
-                .FirstOrDefaultAsync(s => s.ID == id);
+                .Include(b => b.BookCategories)
+                    .ThenInclude(bc => bc.Category)
+                .FirstOrDefaultAsync(b => b.ID == Book.ID);
 
             if (bookToUpdate == null)
-            {
                 return NotFound();
-            }
 
-            // Update AuthorID according to Lab 2 requirements
-            if (await TryUpdateModelAsync<Book>(
-                bookToUpdate,
-                "Book",
-                i => i.Title,
-                i => i.AuthorID,
-                i => i.Price,
-                i => i.PublishingDate,
-                i => i.PublisherID))
-            {
-                UpdateBookCategories(
-                    _context, selectedCategories, bookToUpdate);
+            bookToUpdate.Title = Book.Title;
+            bookToUpdate.AuthorID = Book.AuthorID;
+            bookToUpdate.Price = Book.Price;
+            bookToUpdate.PublishingDate = Book.PublishingDate;
+            bookToUpdate.PublisherID = Book.PublisherID;
 
-                await _context.SaveChangesAsync();
-
-                return RedirectToPage("./Index");
-            }
-
-            // Update categories using the checkbox information
             UpdateBookCategories(
                 _context, selectedCategories, bookToUpdate);
 
-            PopulateAssignedCategoryData(_context, bookToUpdate);
+            await _context.SaveChangesAsync();
 
-            return Page();
+            return RedirectToPage("./Index");
         }
     }
 }

@@ -1,3 +1,4 @@
+
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.EntityFrameworkCore;
@@ -16,8 +17,19 @@ public class IndexModel : PageModel
 
     public IList<Category> Category { get; set; } = default!;
 
-    public async Task OnGetAsync()
+    public Category SelectedCategory { get; set; }
+
+    public async Task OnGetAsync(int? id)
     {
         Category = await _context.Category.ToListAsync();
+
+        if (id != null)
+        {
+            SelectedCategory = await _context.Category
+                .Include(c => c.BookCategories)
+                    .ThenInclude(bc => bc.Book)
+                        .ThenInclude(b => b.Author)
+                .FirstOrDefaultAsync(c => c.ID == id);
+        }
     }
 }

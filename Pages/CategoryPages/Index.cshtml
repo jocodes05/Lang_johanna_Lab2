@@ -10,33 +10,42 @@
 <p>
     <a asp-page="Create">Create New</a>
 </p>
+
 <table class="table">
     <thead>
         <tr>
-            <th>
-                @Html.DisplayNameFor(model => model.Category[0].CategoryName)
-            </th>
-            <th>
-                @Html.DisplayNameFor(model => model.Category[0].BookCategories)
-            </th>
+            <th>Category Name</th>
             <th></th>
         </tr>
     </thead>
     <tbody>
-@foreach (var item in Model.Category) {
-        <tr>
-            <td>
-                @Html.DisplayFor(model => item.CategoryName)
-            </td>
-            <td>
-                @Html.DisplayFor(model => item.BookCategories)
-            </td>
-            <td>
-                <a asp-page="./Edit" asp-route-id="@item.ID">Edit</a> |
-                <a asp-page="./Details" asp-route-id="@item.ID">Details</a> |
-                <a asp-page="./Delete" asp-route-id="@item.ID">Delete</a>
-            </td>
-        </tr>
-}
+        @foreach (var item in Model.Category)
+        {
+            <tr>
+                <td>
+                    <a asp-page="./Index" asp-route-id="@item.ID">
+                        @item.CategoryName
+                    </a>
+                </td>
+                <td>
+                    <a asp-page="./Edit" asp-route-id="@item.ID">Edit</a> |
+                    <a asp-page="./Details" asp-route-id="@item.ID">Details</a> |
+                    <a asp-page="./Delete" asp-route-id="@item.ID">Delete</a>
+                </td>
+            </tr>
+        }
     </tbody>
 </table>
+
+@if (Model.SelectedCategory != null)
+{
+    <h3>Books in @Model.SelectedCategory.CategoryName</h3>
+
+    @foreach (var item in Model.SelectedCategory.BookCategories)
+    {
+        <p>
+            @item.Book.Title -
+            @item.Book.Author?.FullName
+        </p>
+    }
+}
